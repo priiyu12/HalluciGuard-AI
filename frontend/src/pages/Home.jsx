@@ -12,8 +12,10 @@ import RiskScoreCard from '../components/RiskScoreCard';
 import TechnicalDetails from '../components/TechnicalDetails';
 import UncertaintyBreakdown from '../components/UncertaintyBreakdown';
 import VerdictCard from '../components/VerdictCard';
-import { analyzeResponse, checkBackendHealth, clearHistory, getHistory, runBenchmark, runDemoModelComparison } from '../api/hallucinationApi';
+import { analyzeResponse, checkBackendHealth, clearHistory, getHistory, runBenchmark, runDemoModelComparison, compareModelOutputs } from '../api/hallucinationApi';
 import demoCasesData from '../../../data/demo_cases.json';
+
+const MODEL_OPTIONS = ['GPT', 'Gemini', 'Claude', 'Perplexity', 'Mistral', 'LLaMA', 'RAG Pipeline'];
 
 export default function Home() {
   const [activePage, setActivePage] = useState('analyze');
@@ -184,6 +186,19 @@ function ModelLabPage() {
   const [comparison, setComparison] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [domain, setDomain] = useState('business');
+  const [question, setQuestion] = useState('Who founded Tesla?');
+  const [sampleAnswers, setSampleAnswers] = useState('Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003.\nElon Musk joined Tesla later as an investor and chairman.');
+  const [selectedModels, setSelectedModels] = useState(['GPT', 'Gemini', 'Claude', 'Perplexity', 'LLaMA', 'RAG Pipeline']);
+  const [customModelName, setCustomModelName] = useState('');
+  const [modelOutputs, setModelOutputs] = useState({
+    GPT: 'Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003.',
+    Gemini: 'Tesla was founded by Elon Musk in 2003.',
+    Claude: 'Tesla was founded in 2003 by Martin Eberhard and Marc Tarpenning; Elon Musk joined later.',
+    Perplexity: 'Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003, with Elon Musk joining later as an investor.',
+    LLaMA: 'Tesla was started by Martin Eberhard, Marc Tarpenning, and Elon Musk.',
+    'RAG Pipeline': 'Tesla was founded in 2003 by Martin Eberhard and Marc Tarpenning.',
+  });
 
   const handleRun = async () => {
     setLoading(true);
@@ -195,6 +210,60 @@ function ModelLabPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCustomCompare = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const cleanSamples = parseSamples(sampleAnswers);
+      const outputs = Object.fromEntries(
+        selectedModels
+          .map((model) => [model, modelOutputs[model]?.trim()])
+          .filter(([, answer]) => Boolean(answer)),
+      );
+
+      if (!question.trim()) {
+        throw new Error('Question is required for model comparison.');
+      }
+      if (Object.keys(outputs).length < 2) {
+        throw new Error('Add answers for at least two selected models.');
+      }
+
+      setComparison(await compareModelOutputs([
+        {
+          id: `custom-${Date.now()}`,
+          domain: domain.trim() || 'general',
+          question: question.trim(),
+          sample_answers: cleanSamples,
+          model_outputs: outputs,
+        },
+      ]));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleModel = (modelName) => {
+    setSelectedModels((current) => (
+      current.includes(modelName)
+        ? current.filter((item) => item !== modelName)
+        : [...current, modelName]
+    ));
+  };
+
+  const addCustomModel = () => {
+    const cleanName = customModelName.trim();
+    if (!cleanName || selectedModels.includes(cleanName)) return;
+    setSelectedModels((current) => [...current, cleanName]);
+    setModelOutputs((current) => ({ ...current, [cleanName]: '' }));
+    setCustomModelName('');
+  };
+
+  const updateOutput = (modelName, value) => {
+    setModelOutputs((current) => ({ ...current, [modelName]: value }));
   };
 
   const exportComparison = () => {
@@ -212,19 +281,107 @@ function ModelLabPage() {
     <section className="flex flex-col gap-6">
       <PageHeader
         title="Model Testing Platform"
-        subtitle="Compare GPT, Gemini, LLaMA, and RAG-style outputs across shared questions, domains, and hallucination risk."
+        subtitle="Choose models, enter their answers for the same question, and compare hallucination risk by model and domain."
       />
-      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-premium">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-premium">
           <div>
             <h2 className="text-sm font-bold text-slate-900">Demo Multi-Model Batch</h2>
             <p className="mt-1 text-xs leading-relaxed text-slate-500">
-              Runs the same five prompts against fixed model outputs and scores each answer through the HalluciGuard pipeline.
+              Runs the same five prompts against GPT, Gemini, Claude, Perplexity, Mistral, LLaMA, and RAG-style outputs.
             </p>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={handleRun} disabled={loading} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60">
+            <button onClick={handleRun} disabled={loading} className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60">
               {loading ? 'Scoring Models...' : 'Run Model Comparison'}
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-premium">
+          <h2 className="text-sm font-bold text-slate-900">Custom Model Comparison</h2>
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">
+            Enter a domain, a question, reference-free sample answers, then paste each model's output.
+          </p>
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <label className="flex flex-col gap-1.5 text-xs font-semibold text-slate-700">
+              Domain
+              <input
+                value={domain}
+                onChange={(e) => setDomain(e.target.value)}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="business, legal, medical, coding..."
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-xs font-semibold text-slate-700 md:col-span-2">
+              Question
+              <textarea
+                rows={2}
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="Question every model answered"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-xs font-semibold text-slate-700 md:col-span-2">
+              Sample Answers
+              <textarea
+                rows={3}
+                value={sampleAnswers}
+                onChange={(e) => setSampleAnswers(e.target.value)}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="One sample per line, or separate with ---"
+              />
+            </label>
+          </div>
+
+          <div className="mt-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Select Models</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {MODEL_OPTIONS.map((model) => (
+                <button
+                  key={model}
+                  type="button"
+                  onClick={() => toggleModel(model)}
+                  className={`rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    selectedModels.includes(model)
+                      ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {model}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <input
+                value={customModelName}
+                onChange={(e) => setCustomModelName(e.target.value)}
+                className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="Other model name"
+              />
+              <button type="button" onClick={addCustomModel} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                Add Other
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-3">
+            {selectedModels.map((model) => (
+              <label key={model} className="flex flex-col gap-1.5 text-xs font-semibold text-slate-700">
+                {model} Output
+                <textarea
+                  rows={3}
+                  value={modelOutputs[model] || ''}
+                  onChange={(e) => updateOutput(model, e.target.value)}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder={`Paste ${model}'s answer`}
+                />
+              </label>
+            ))}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button onClick={handleCustomCompare} disabled={loading} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60">
+              Compare Selected Models
             </button>
             <button onClick={exportComparison} disabled={!comparison} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
               Export Report
@@ -445,6 +602,12 @@ function Metric({ label, value }) {
       <div className="mt-1 text-lg font-bold text-slate-900">{Math.round((value || 0) * 100)}%</div>
     </div>
   );
+}
+
+function parseSamples(value) {
+  if (!value.trim()) return [];
+  const parts = value.includes('---') ? value.split('---') : value.split('\n');
+  return parts.map((sample) => sample.trim()).filter(Boolean);
 }
 
 function PageHeader({ title, subtitle }) {

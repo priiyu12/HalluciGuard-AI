@@ -18,7 +18,7 @@ HalluciGuard AI is a local research prototype for AI reliability work. It audits
 ### v3.0.0 Preview: Model Testing Platform
 
 - compare multiple LLM outputs across the same question set
-- test GPT/Gemini/LLaMA/Mistral/RAG-style outputs
+- test GPT/Gemini/Claude/Perplexity/LLaMA/Mistral/RAG-style outputs
 - batch evaluation
 - leaderboard
 - model-wise hallucination risk
@@ -176,14 +176,17 @@ curl http://localhost:8000/api/benchmark/run
 
 ## Model Testing Platform
 
-The Model Lab scores the same cases across multiple named model outputs.
+The Model Lab scores the same cases across multiple named model outputs. Users can enter a domain, a question, optional sample answers, select which models to compare, paste each model's answer, and export the comparison report.
 
 Example output:
 
-- GPT average hallucination risk: `20%`
-- Gemini average hallucination risk: `32%`
-- LLaMA average hallucination risk: `65%`
-- RAG Pipeline average hallucination risk: `8%`
+- GPT average hallucination risk
+- Gemini average hallucination risk
+- Claude average hallucination risk
+- Perplexity average hallucination risk
+- Mistral average hallucination risk
+- LLaMA average hallucination risk
+- RAG Pipeline average hallucination risk
 
 API routes:
 

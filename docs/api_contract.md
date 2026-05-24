@@ -98,7 +98,7 @@ Runs the 50-case benchmark and returns metrics for each strategy.
 
 ## GET /api/models/compare/demo
 
-Runs the built-in v3 model-comparison demo across GPT, Gemini, LLaMA, and RAG-style outputs.
+Runs the built-in v3 model-comparison demo across GPT, Gemini, Claude, Perplexity, Mistral, LLaMA, and RAG-style outputs.
 
 ```json
 {
@@ -135,4 +135,4 @@ Runs a custom model comparison batch.
 }
 ```
 
-The response ranks models by average hallucination risk and includes domain-wise reliability scores.
+The response ranks models by average hallucination risk and includes domain-wise reliability scores. The frontend Model Lab lets users choose which models to compare, paste each model output, and add an "Other" custom model name.

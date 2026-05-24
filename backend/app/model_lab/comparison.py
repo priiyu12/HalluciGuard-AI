@@ -17,6 +17,9 @@ DEFAULT_MODEL_CASES = [
         "model_outputs": {
             "GPT": "Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003.",
             "Gemini": "Tesla was founded by Elon Musk in 2003.",
+            "Claude": "Tesla was founded in 2003 by Martin Eberhard and Marc Tarpenning; Elon Musk joined later.",
+            "Perplexity": "Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003, with Elon Musk joining later as an investor.",
+            "Mistral": "Tesla was founded by Martin Eberhard, Marc Tarpenning, and Elon Musk in 2003.",
             "LLaMA": "Tesla was started by Martin Eberhard, Marc Tarpenning, and Elon Musk.",
             "RAG Pipeline": "Tesla was founded in 2003 by Martin Eberhard and Marc Tarpenning.",
         },
@@ -32,6 +35,9 @@ DEFAULT_MODEL_CASES = [
         "model_outputs": {
             "GPT": "Apple was founded in 1976 by Steve Jobs, Steve Wozniak, and Ronald Wayne.",
             "Gemini": "Apple was founded in 1976 by Steve Jobs and Steve Wozniak.",
+            "Claude": "Apple was founded in 1976 by Steve Jobs, Steve Wozniak, and Ronald Wayne.",
+            "Perplexity": "Apple Computer was founded in 1976 by Steve Jobs, Steve Wozniak, and Ronald Wayne.",
+            "Mistral": "Apple was founded in 1976 by Steve Jobs and Steve Wozniak.",
             "LLaMA": "Apple was founded in 1977 by Steve Jobs and Steve Wozniak.",
             "RAG Pipeline": "Apple was founded in 1976 by Steve Jobs, Steve Wozniak, and Ronald Wayne.",
         },
@@ -47,6 +53,9 @@ DEFAULT_MODEL_CASES = [
         "model_outputs": {
             "GPT": "The Titanic sank on April 15, 1912.",
             "Gemini": "The Titanic sank on April 15, 1912.",
+            "Claude": "The Titanic sank on April 15, 1912.",
+            "Perplexity": "RMS Titanic sank on April 15, 1912.",
+            "Mistral": "The Titanic sank in 1912 after striking an iceberg.",
             "LLaMA": "The Titanic sank on April 15, 1915.",
             "RAG Pipeline": "The Titanic sank on April 15, 1912.",
         },
@@ -62,6 +71,9 @@ DEFAULT_MODEL_CASES = [
         "model_outputs": {
             "GPT": "Seattle has about 740,000 residents.",
             "Gemini": "Seattle has a population of around 750,000 people.",
+            "Claude": "Seattle's population is roughly 740,000 people.",
+            "Perplexity": "Seattle has about 755,000 residents in recent estimates.",
+            "Mistral": "Seattle has a population of roughly 730,000 to 750,000 people.",
             "LLaMA": "Seattle has a population of 1.2 million people.",
             "RAG Pipeline": "Seattle's population is roughly 740,000 people.",
         },
@@ -77,6 +89,9 @@ DEFAULT_MODEL_CASES = [
         "model_outputs": {
             "GPT": "OpenAI is headquartered in San Francisco and was founded in 2015.",
             "Gemini": "OpenAI is based in San Francisco, California.",
+            "Claude": "OpenAI is headquartered in San Francisco, California and was founded in 2015.",
+            "Perplexity": "OpenAI is headquartered in San Francisco and was founded in 2015.",
+            "Mistral": "OpenAI is headquartered in San Francisco and was founded in 2016.",
             "LLaMA": "OpenAI is headquartered in New York and was founded in 2016.",
             "RAG Pipeline": "OpenAI is headquartered in San Francisco, California.",
         },
