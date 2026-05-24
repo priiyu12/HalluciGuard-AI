@@ -136,3 +136,43 @@ Runs a custom model comparison batch.
 ```
 
 The response ranks models by average hallucination risk and includes domain-wise reliability scores. The frontend Model Lab lets users choose which models to compare, paste each model output, and add an "Other" custom model name.
+
+## POST /api/models/run-query
+
+Runs one question against selected configured model providers, returns every model answer, and scores hallucination risk for each completed answer. Missing API keys or unavailable local models are returned as `unavailable`; the backend does not fabricate model outputs.
+
+```json
+{
+  "domain": "business",
+  "question": "Who founded Tesla?",
+  "selected_models": ["GPT", "Gemini", "Claude", "Perplexity", "LLaMA", "RAG Pipeline"],
+  "sample_answers": [
+    "Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003."
+  ],
+  "context_text": "Optional context text for RAG and faithfulness checks."
+}
+```
+
+Response:
+
+```json
+{
+  "question": "Who founded Tesla?",
+  "domain": "business",
+  "total_models": 6,
+  "completed_models": 2,
+  "unavailable_models": 4,
+  "leaderboard": [],
+  "model_results": [
+    {
+      "model_name": "GPT",
+      "provider": "OpenAI",
+      "status": "completed",
+      "answer": "...",
+      "risk_score": 12,
+      "risk_level": "Low"
+    }
+  ],
+  "provider_note": "Live querying uses configured provider API keys or local Ollama. Unavailable models are not faked."
+}
+```

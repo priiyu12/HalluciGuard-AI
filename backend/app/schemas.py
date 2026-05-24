@@ -79,3 +79,20 @@ class ModelComparisonResponse(BaseModel):
     model_summaries: Dict[str, Dict[str, Any]]
     domain_reliability: Dict[str, Dict[str, Any]]
     case_results: Dict[str, List[Dict[str, Any]]]
+
+class ModelQueryRunRequest(BaseModel):
+    question: str = Field(..., min_length=1)
+    domain: str = "general"
+    selected_models: List[str] = Field(..., min_length=1)
+    sample_answers: Optional[Union[List[str], str]] = None
+    context_text: Optional[str] = None
+
+class ModelQueryRunResponse(BaseModel):
+    question: str
+    domain: str
+    total_models: int
+    completed_models: int
+    unavailable_models: int
+    leaderboard: List[Dict[str, Any]]
+    model_results: List[Dict[str, Any]]
+    provider_note: str

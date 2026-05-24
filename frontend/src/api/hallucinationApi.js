@@ -82,6 +82,25 @@ export async function compareModelOutputs(cases) {
   return await response.json();
 }
 
+export async function runQueryOnModels({ question, domain, selectedModels, sampleAnswers, contextText }) {
+  const response = await fetch(`${API_BASE_URL}/api/models/run-query`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      question,
+      domain,
+      selected_models: selectedModels,
+      sample_answers: sampleAnswers,
+      context_text: contextText,
+    }),
+  });
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: 'Unknown live model query error.' }));
+    throw new Error(errData.detail || `Live model query error: ${response.status}`);
+  }
+  return await response.json();
+}
+
 /**
  * Performs a health check request to determine the backend server status.
  */

@@ -12,7 +12,7 @@ import RiskScoreCard from '../components/RiskScoreCard';
 import TechnicalDetails from '../components/TechnicalDetails';
 import UncertaintyBreakdown from '../components/UncertaintyBreakdown';
 import VerdictCard from '../components/VerdictCard';
-import { analyzeResponse, checkBackendHealth, clearHistory, getHistory, runBenchmark, runDemoModelComparison, compareModelOutputs } from '../api/hallucinationApi';
+import { analyzeResponse, checkBackendHealth, clearHistory, getHistory, runBenchmark, runDemoModelComparison, compareModelOutputs, runQueryOnModels } from '../api/hallucinationApi';
 import demoCasesData from '../../../data/demo_cases.json';
 
 const MODEL_OPTIONS = ['GPT', 'Gemini', 'Claude', 'Perplexity', 'Mistral', 'LLaMA', 'RAG Pipeline'];
@@ -184,11 +184,13 @@ function EvaluationLab() {
 
 function ModelLabPage() {
   const [comparison, setComparison] = useState(null);
+  const [liveRun, setLiveRun] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [domain, setDomain] = useState('business');
   const [question, setQuestion] = useState('Who founded Tesla?');
   const [sampleAnswers, setSampleAnswers] = useState('Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003.\nElon Musk joined Tesla later as an investor and chairman.');
+  const [contextText, setContextText] = useState('Tesla was founded in 2003 by Martin Eberhard and Marc Tarpenning. Elon Musk joined Tesla after the founding as an investor and chairman.');
   const [selectedModels, setSelectedModels] = useState(['GPT', 'Gemini', 'Claude', 'Perplexity', 'LLaMA', 'RAG Pipeline']);
   const [customModelName, setCustomModelName] = useState('');
   const [modelOutputs, setModelOutputs] = useState({
@@ -204,7 +206,33 @@ function ModelLabPage() {
     setLoading(true);
     setError(null);
     try {
+      setLiveRun(null);
       setComparison(await runDemoModelComparison());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLiveRun = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (!question.trim()) {
+        throw new Error('Question is required before running selected models.');
+      }
+      if (selectedModels.length === 0) {
+        throw new Error('Select at least one model to query.');
+      }
+      setComparison(null);
+      setLiveRun(await runQueryOnModels({
+        question: question.trim(),
+        domain: domain.trim() || 'general',
+        selectedModels,
+        sampleAnswers: parseSamples(sampleAnswers),
+        contextText,
+      }));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -236,9 +264,11 @@ function ModelLabPage() {
           domain: domain.trim() || 'general',
           question: question.trim(),
           sample_answers: cleanSamples,
+          context_text: contextText,
           model_outputs: outputs,
         },
       ]));
+      setLiveRun(null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -267,8 +297,9 @@ function ModelLabPage() {
   };
 
   const exportComparison = () => {
-    if (!comparison) return;
-    const blob = new Blob([JSON.stringify(comparison, null, 2)], { type: 'application/json' });
+    const exportData = liveRun || comparison;
+    if (!exportData) return;
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -297,9 +328,9 @@ function ModelLabPage() {
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-premium">
-          <h2 className="text-sm font-bold text-slate-900">Custom Model Comparison</h2>
+          <h2 className="text-sm font-bold text-slate-900">Live Model Query Runner</h2>
           <p className="mt-1 text-xs leading-relaxed text-slate-500">
-            Enter a domain, a question, reference-free sample answers, then paste each model's output.
+            Enter a domain and question, choose models, run the query, then compare model answers and hallucination risk. Provider API keys or local Ollama are required; missing providers are shown as unavailable.
           </p>
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
             <label className="flex flex-col gap-1.5 text-xs font-semibold text-slate-700">
@@ -329,6 +360,16 @@ function ModelLabPage() {
                 onChange={(e) => setSampleAnswers(e.target.value)}
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 placeholder="One sample per line, or separate with ---"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-xs font-semibold text-slate-700 md:col-span-2">
+              Optional Context for RAG / Faithfulness
+              <textarea
+                rows={3}
+                value={contextText}
+                onChange={(e) => setContextText(e.target.value)}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="Paste context if you want the RAG Pipeline and context faithfulness checks."
               />
             </label>
           </div>
@@ -365,6 +406,9 @@ function ModelLabPage() {
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-3">
+            <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">
+              Live run will query selected providers and auto-score each returned answer against the other model answers plus your optional samples. You can also paste/edit outputs below and use manual comparison.
+            </div>
             {selectedModels.map((model) => (
               <label key={model} className="flex flex-col gap-1.5 text-xs font-semibold text-slate-700">
                 {model} Output
@@ -380,16 +424,24 @@ function ModelLabPage() {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <button onClick={handleCustomCompare} disabled={loading} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60">
-              Compare Selected Models
+            <button onClick={handleLiveRun} disabled={loading} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60">
+              {loading ? 'Running Models...' : 'Run Query on Selected Models'}
             </button>
-            <button onClick={exportComparison} disabled={!comparison} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+            <button onClick={handleCustomCompare} disabled={loading} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60">
+              Compare Pasted Outputs
+            </button>
+            <button onClick={exportComparison} disabled={!comparison && !liveRun} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
               Export Report
             </button>
           </div>
         </div>
       </div>
       {error && <Alert tone="rose" title="Model Lab Error" message={error} />}
+      {liveRun && (
+        <>
+          <LiveModelResults liveRun={liveRun} />
+        </>
+      )}
       {comparison && (
         <>
           <Leaderboard comparison={comparison} />
@@ -435,6 +487,75 @@ function Leaderboard({ comparison }) {
               <div className="rounded bg-amber-50 p-2 text-amber-700">Med {model.medium_risk_cases}</div>
               <div className="rounded bg-rose-50 p-2 text-rose-700">High {model.high_risk_cases}</div>
             </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LiveModelResults({ liveRun }) {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-premium">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Live Model Answers and Risk</h3>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              {liveRun.completed_models} of {liveRun.total_models} providers returned answers. {liveRun.provider_note}
+            </p>
+          </div>
+          <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+            Domain: {liveRun.domain}
+          </span>
+        </div>
+        <div className="mt-4 rounded-lg bg-slate-50 p-3">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Question</div>
+          <p className="mt-1 text-sm font-semibold text-slate-900">{liveRun.question}</p>
+        </div>
+      </div>
+
+      {liveRun.leaderboard?.length > 0 && (
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-premium">
+          <h3 className="text-sm font-bold text-slate-900">Live Risk Leaderboard</h3>
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {liveRun.leaderboard.map((model, index) => (
+              <div key={model.model_name} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900">#{index + 1} {model.model_name}</span>
+                  <span className="rounded bg-white px-2 py-1 text-[10px] font-bold text-slate-600">{model.reliability_score}% reliable</span>
+                </div>
+                <div className="mt-3 text-xs font-semibold text-slate-700">Risk {model.risk_score}% ({model.risk_level})</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        {liveRun.model_results.map((result) => (
+          <div key={result.model_name} className="rounded-lg border border-slate-200 bg-white p-5 shadow-premium">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">{result.model_name}</h4>
+                <p className="mt-1 text-[11px] text-slate-500">{result.provider || 'Provider unavailable'}</p>
+              </div>
+              {result.status === 'completed' ? (
+                <span className={`rounded-md px-2 py-1 text-[10px] font-bold ${result.risk_score >= 66 ? 'bg-rose-50 text-rose-700' : result.risk_score >= 31 ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                  {result.risk_score}% {result.risk_level}
+                </span>
+              ) : (
+                <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">Unavailable</span>
+              )}
+            </div>
+            {result.status === 'completed' ? (
+              <>
+                <p className="mt-4 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-700">{result.answer}</p>
+                <p className="mt-3 text-xs leading-relaxed text-slate-500">{result.verdict}</p>
+              </>
+            ) : (
+              <p className="mt-4 rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">{result.error}</p>
+            )}
           </div>
         ))}
       </div>

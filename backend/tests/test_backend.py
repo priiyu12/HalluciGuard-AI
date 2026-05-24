@@ -133,3 +133,34 @@ def test_model_comparison_api():
     data = response.json()
     assert data["models_compared"] >= 4
     assert "leaderboard" in data
+
+def test_live_model_runner_rag_only_api():
+    response = client.post(
+        "/api/models/run-query",
+        json={
+            "question": "Who founded Tesla?",
+            "domain": "business",
+            "selected_models": ["RAG Pipeline"],
+            "context_text": "Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003.",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["completed_models"] == 1
+    assert data["model_results"][0]["status"] == "completed"
+    assert "risk_score" in data["model_results"][0]
+
+def test_live_model_query_api_unavailable_without_key():
+    response = client.post(
+        "/api/models/run-query",
+        json={
+            "question": "Who founded Tesla?",
+            "domain": "business",
+            "selected_models": ["GPT"],
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_models"] == 1
+    assert data["completed_models"] in {0, 1}
+    assert "model_results" in data

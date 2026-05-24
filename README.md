@@ -176,7 +176,12 @@ curl http://localhost:8000/api/benchmark/run
 
 ## Model Testing Platform
 
-The Model Lab scores the same cases across multiple named model outputs. Users can enter a domain, a question, optional sample answers, select which models to compare, paste each model's answer, and export the comparison report.
+The Model Lab has two workflows:
+
+- Live Query Runner: users enter a domain and question, select models, and HalluciGuard calls configured providers or local Ollama, displays every model answer, then scores each answer against peer model outputs plus optional samples/context.
+- Pasted Output Comparison: users paste/edit model answers manually and compare them without provider API keys.
+
+Missing provider credentials are reported as unavailable; the app does not fake model answers.
 
 Example output:
 
@@ -192,6 +197,7 @@ API routes:
 
 - `GET /api/models/compare/demo`
 - `POST /api/models/compare`
+- `POST /api/models/run-query`
 
 `POST /api/models/compare` accepts:
 
@@ -214,6 +220,30 @@ API routes:
   ]
 }
 ```
+
+`POST /api/models/run-query` accepts:
+
+```json
+{
+  "domain": "business",
+  "question": "Who founded Tesla?",
+  "selected_models": ["GPT", "Gemini", "Claude", "Perplexity", "LLaMA", "RAG Pipeline"],
+  "sample_answers": [
+    "Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003."
+  ],
+  "context_text": "Optional context for RAG Pipeline and faithfulness checking."
+}
+```
+
+Optional provider settings in `backend/.env`:
+
+- `OPENAI_API_KEY` for GPT
+- `GEMINI_API_KEY` or `GOOGLE_API_KEY` for Gemini
+- `ANTHROPIC_API_KEY` for Claude
+- `PERPLEXITY_API_KEY` for Perplexity
+- `MISTRAL_API_KEY` for Mistral, or local Ollama fallback
+- `OLLAMA_BASE_URL`, `OLLAMA_LLAMA_MODEL`, `OLLAMA_MISTRAL_MODEL` for local LLaMA/Mistral
+- RAG Pipeline uses pasted `context_text`
 
 ## Setup
 

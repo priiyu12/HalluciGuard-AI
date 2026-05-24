@@ -7,10 +7,13 @@ from app.schemas import (
     HistoryResponse,
     ModelComparisonRequest,
     ModelComparisonResponse,
+    ModelQueryRunRequest,
+    ModelQueryRunResponse,
 )
 from app.benchmark.evaluator import run_benchmark
 from app.core.report_generator import generate_report
 from app.model_lab.comparison import compare_models
+from app.model_lab.live_runner import run_models_and_score
 from app.models.embedding_model import get_model_mode
 from app.storage.history_store import add_history_item, clear_history, get_history_items
 
@@ -101,4 +104,24 @@ async def compare_demo_models():
         raise HTTPException(
             status_code=500,
             detail=f"Demo model comparison failure: {str(e)}"
+        )
+
+@router.post("/models/run-query", response_model=ModelQueryRunResponse)
+async def run_query_on_models(request: ModelQueryRunRequest):
+    try:
+        return ModelQueryRunResponse(
+            **await run_models_and_score(
+                question=request.question,
+                selected_models=request.selected_models,
+                domain=request.domain,
+                sample_answers=request.sample_answers,
+                context_text=request.context_text,
+            )
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Live model query failure: {str(e)}"
         )
