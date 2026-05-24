@@ -1,0 +1,62 @@
+[
+  {
+    "id": "tesla-founder",
+    "label": "Tesla Founder Mismatch (High Risk)",
+    "description": "Checks if the founder names are correctly flagged as conflicting, since Elon Musk did not start the company, but Martin Eberhard and Marc Tarpenning did.",
+    "question": "Who founded Tesla?",
+    "llm_answer": "Tesla was founded by Elon Musk in 2003.",
+    "sample_answers": [
+      "Tesla was founded in 2003 by Martin Eberhard and Marc Tarpenning.",
+      "Tesla Motors was started by Martin Eberhard and Marc Tarpenning.",
+      "Elon Musk joined Tesla later as an investor and chairman."
+    ]
+  },
+  {
+    "id": "apple-founding",
+    "label": "Apple Founding (Low Risk)",
+    "description": "Tests a highly consistent fact. All founders, the year, and details match perfectly across all samples.",
+    "question": "When was Apple founded?",
+    "llm_answer": "Apple was founded in 1976 by Steve Jobs, Steve Wozniak, and Ronald Wayne.",
+    "sample_answers": [
+      "Apple was founded in 1976 by Steve Jobs, Steve Wozniak, and Ronald Wayne.",
+      "Apple Computer was started in 1976 by Steve Jobs, Steve Wozniak, and Ronald Wayne.",
+      "The company began in 1976."
+    ]
+  },
+  {
+    "id": "openai-hq",
+    "label": "OpenAI HQ (Medium/Low Risk)",
+    "description": "Tests a case where the samples offer slightly different level of details, but are consistent with the original claim (San Francisco, 2015).",
+    "question": "Where is OpenAI headquartered?",
+    "llm_answer": "OpenAI is headquartered in San Francisco and was founded in 2015.",
+    "sample_answers": [
+      "OpenAI was founded in 2015 and is based in San Francisco.",
+      "OpenAI is an AI research company founded in 2015.",
+      "OpenAI is headquartered in San Francisco, California."
+    ]
+  },
+  {
+    "id": "seattle-pop",
+    "label": "Seattle Population (Numeric Contradiction)",
+    "description": "Checks whether a claim containing a wrong numeric figure (1.2 million) is flagged against samples that state the correct figure (~730k-750k).",
+    "question": "What is the population of Seattle?",
+    "llm_answer": "Seattle has a population of 1.2 million people.",
+    "sample_answers": [
+      "Seattle has a population of about 730,000 people.",
+      "The city of Seattle has a population of roughly 740,000 as of recent estimates.",
+      "Seattle's population is approximately 750,000."
+    ]
+  },
+  {
+    "id": "titanic-date",
+    "label": "Titanic Sinking (Date Mismatch)",
+    "description": "Checks if the system catches the wrong year (1915 vs 1912) for a major historical event.",
+    "question": "When did the Titanic sink?",
+    "llm_answer": "The Titanic sank on April 15, 1915.",
+    "sample_answers": [
+      "The Titanic sank in the early morning of April 15, 1912.",
+      "The RMS Titanic hit an iceberg and sank on April 15, 1912.",
+      "It sank on April 15, 1912, in the North Atlantic Ocean."
+    ]
+  }
+]
