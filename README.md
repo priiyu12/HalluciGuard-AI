@@ -209,7 +209,3 @@ Add screenshots here after running locally:
 - Optional NLI depends on local model availability and falls back to heuristics.
 - Context mode only supports pasted text in v2; PDF parsing is future scope.
 - Rule-based atomic splitting is conservative and may not perfectly parse every sentence.
-
-## Interview Explanation
-
-HalluciGuard AI v2 is an AI auditing layer rather than a chatbot. The core idea is to treat hallucination risk as a measurable consistency and faithfulness problem. In reference-free mode, it asks whether the target answer is stable across alternate samples. In context-grounded mode, it asks whether each extracted claim is supported by pasted evidence. The project demonstrates practical ML engineering tradeoffs: optional local models, fallback-safe heuristics, explainable scoring, benchmark evaluation, and a UI designed for reliability review.
