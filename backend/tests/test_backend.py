@@ -8,6 +8,7 @@ from app.core.atomic_claim_extractor import extract_atomic_claims
 from app.core.uncertainty import compute_uncertainty_breakdown
 from app.context_mode.faithfulness_checker import check_claim_faithfulness
 from app.benchmark.evaluator import compute_metrics
+from app.model_lab.comparison import compare_models
 
 client = TestClient(app)
 
@@ -118,3 +119,17 @@ def test_benchmark_metrics():
     metrics = compute_metrics([1, 1, 0, 0], [1, 0, 0, 1])
     assert metrics["confusion_matrix"] == {"tp": 1, "tn": 1, "fp": 1, "fn": 1}
     assert metrics["accuracy"] == 0.5
+
+def test_model_comparison_summary():
+    result = compare_models()
+    assert result["total_cases"] >= 5
+    assert result["models_compared"] >= 4
+    assert result["leaderboard"][0]["average_risk"] <= result["leaderboard"][-1]["average_risk"]
+    assert "domain_reliability" in result
+
+def test_model_comparison_api():
+    response = client.get("/api/models/compare/demo")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["models_compared"] >= 4
+    assert "leaderboard" in data

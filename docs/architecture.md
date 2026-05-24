@@ -36,6 +36,7 @@ flowchart TD
 - `uncertainty.py`: explainable uncertainty breakdown.
 - `context_mode/`: document loading, chunking, retrieval, and faithfulness labeling.
 - `benchmark/evaluator.py`: benchmark metrics and model-strategy comparison.
+- `model_lab/comparison.py`: multi-model batch evaluation, leaderboard, and domain-wise reliability.
 - `storage/history_store.py`: local JSON-backed history.
 
 ## Frontend
@@ -44,7 +45,8 @@ Pages:
 
 - Analyze
 - Evaluation Lab
+- Model Lab
 - History
 - Methodology
 
-The Analyze page defaults to custom input. Demo cases only autofill editable fields. Results show mode badges, risk cards, uncertainty breakdown, context evidence, warnings, claims, export actions, and technical details.
+The Analyze page defaults to custom input. Demo cases only autofill editable fields. Results show mode badges, risk cards, uncertainty breakdown, context evidence, warnings, claims, export actions, and technical details. The Model Lab turns the auditor into a model testing platform by scoring the same prompts across GPT/Gemini/LLaMA/RAG-style outputs and ranking model-wise hallucination risk.

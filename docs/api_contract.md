@@ -95,3 +95,44 @@ Runs the 50-case benchmark and returns metrics for each strategy.
   }
 }
 ```
+
+## GET /api/models/compare/demo
+
+Runs the built-in v3 model-comparison demo across GPT, Gemini, LLaMA, and RAG-style outputs.
+
+```json
+{
+  "total_cases": 5,
+  "models_compared": 4,
+  "leaderboard": [],
+  "model_summaries": {},
+  "domain_reliability": {},
+  "case_results": {}
+}
+```
+
+## POST /api/models/compare
+
+Runs a custom model comparison batch.
+
+```json
+{
+  "cases": [
+    {
+      "id": "case-001",
+      "domain": "business",
+      "question": "Who founded Tesla?",
+      "sample_answers": [
+        "Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003."
+      ],
+      "model_outputs": {
+        "GPT": "Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003.",
+        "Gemini": "Tesla was founded by Elon Musk in 2003.",
+        "RAG Pipeline": "Tesla was founded in 2003 by Martin Eberhard and Marc Tarpenning."
+      }
+    }
+  ]
+}
+```
+
+The response ranks models by average hallucination risk and includes domain-wise reliability scores.

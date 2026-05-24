@@ -34,5 +34,10 @@ This project demonstrates practical full-stack AI/ML engineering:
 - explainable scoring
 - context retrieval and faithfulness checks
 - benchmark evaluation
+- model-wise batch comparison and reliability leaderboard
 - persistent local history
 - exportable reports
+
+## Model Testing Platform Direction
+
+The v3 direction turns HalluciGuard from a single-answer auditor into a model testing platform. The same question set can be evaluated across GPT, Gemini, LLaMA, Mistral, or a RAG pipeline. Each model receives average hallucination risk, domain-wise reliability, and case-level risk labels, making it suitable for comparing model behavior instead of only auditing one output at a time.

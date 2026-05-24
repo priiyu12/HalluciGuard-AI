@@ -60,3 +60,22 @@ class BenchmarkResponse(BaseModel):
 
 class HistoryResponse(BaseModel):
     items: List[Dict[str, Any]]
+
+class ModelComparisonCase(BaseModel):
+    id: str
+    domain: str = "general"
+    question: str
+    sample_answers: Optional[Union[List[str], str]] = None
+    context_text: Optional[str] = None
+    model_outputs: Dict[str, str]
+
+class ModelComparisonRequest(BaseModel):
+    cases: Optional[List[ModelComparisonCase]] = None
+
+class ModelComparisonResponse(BaseModel):
+    total_cases: int
+    models_compared: int
+    leaderboard: List[Dict[str, Any]]
+    model_summaries: Dict[str, Dict[str, Any]]
+    domain_reliability: Dict[str, Dict[str, Any]]
+    case_results: Dict[str, List[Dict[str, Any]]]

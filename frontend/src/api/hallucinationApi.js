@@ -60,6 +60,28 @@ export async function clearHistory() {
   return await response.json();
 }
 
+export async function runDemoModelComparison() {
+  const response = await fetch(`${API_BASE_URL}/api/models/compare/demo`);
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: 'Unknown model comparison error.' }));
+    throw new Error(errData.detail || `Model comparison error: ${response.status}`);
+  }
+  return await response.json();
+}
+
+export async function compareModelOutputs(cases) {
+  const response = await fetch(`${API_BASE_URL}/api/models/compare`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cases }),
+  });
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({ detail: 'Unknown model comparison error.' }));
+    throw new Error(errData.detail || `Model comparison error: ${response.status}`);
+  }
+  return await response.json();
+}
+
 /**
  * Performs a health check request to determine the backend server status.
  */

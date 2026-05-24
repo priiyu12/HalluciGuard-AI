@@ -1,8 +1,28 @@
-# HalluciGuard AI v2
+# HalluciGuard AI
 
-Reference-free and context-grounded hallucination auditing for LLM responses.
+Reference-free, context-grounded, and model-comparison hallucination auditing for LLM responses.
 
-HalluciGuard AI v2 is a local research prototype for AI reliability work. It audits any custom LLM answer, not just demo examples, and reports claim-level risk, uncertainty, entity/date/number instability, optional context faithfulness, history, and benchmark metrics. It runs locally without paid APIs.
+HalluciGuard AI is a local research prototype for AI reliability work. It audits any custom LLM answer, not just demo examples, and reports claim-level risk, uncertainty, entity/date/number instability, optional context faithfulness, history, benchmark metrics, and model-wise reliability comparisons. It runs locally without paid APIs.
+
+## Version Roadmap
+
+### v2.0.0: Research/Evaluation Version
+
+- benchmark dataset
+- Evaluation Lab
+- precision, recall, F1-score
+- confusion matrix
+- compare scoring methods
+- export reports
+
+### v3.0.0 Preview: Model Testing Platform
+
+- compare multiple LLM outputs across the same question set
+- test GPT/Gemini/LLaMA/Mistral/RAG-style outputs
+- batch evaluation
+- leaderboard
+- model-wise hallucination risk
+- domain-wise reliability scores
 
 ## What Changed in v2
 
@@ -15,6 +35,7 @@ HalluciGuard AI v2 is a local research prototype for AI reliability work. It aud
 - Context-grounded Mode 2 retrieves evidence chunks from pasted context and labels claims as Supported, Contradicted, or Not Enough Evidence.
 - Explainable uncertainty breakdown shows sample disagreement, entity instability, semantic variance, and contradiction uncertainty.
 - Evaluation Lab runs a 50-case benchmark with accuracy, precision, recall, F1, and confusion matrix metrics.
+- Model Lab compares multiple model outputs and ranks average hallucination risk.
 - Local history routes store recent reports in JSON.
 - JSON export and copy-summary actions are included in the UI.
 
@@ -36,7 +57,10 @@ flowchart LR
   NLI --> Risk
   Faith --> Report["Report generator"]
   Risk --> Report
+  API --> ModelLab["Model comparison evaluator"]
+  ModelLab --> Leaderboard["Leaderboard + domain reliability"]
   Report --> UI
+  Leaderboard --> UI
 ```
 
 ## Modes
@@ -105,6 +129,7 @@ Pages:
 
 - Analyze
 - Evaluation Lab
+- Model Lab
 - History
 - Methodology
 
@@ -147,6 +172,44 @@ Run from the API:
 
 ```bash
 curl http://localhost:8000/api/benchmark/run
+```
+
+## Model Testing Platform
+
+The Model Lab scores the same cases across multiple named model outputs.
+
+Example output:
+
+- GPT average hallucination risk: `20%`
+- Gemini average hallucination risk: `32%`
+- LLaMA average hallucination risk: `65%`
+- RAG Pipeline average hallucination risk: `8%`
+
+API routes:
+
+- `GET /api/models/compare/demo`
+- `POST /api/models/compare`
+
+`POST /api/models/compare` accepts:
+
+```json
+{
+  "cases": [
+    {
+      "id": "case-001",
+      "domain": "business",
+      "question": "Who founded Tesla?",
+      "sample_answers": [
+        "Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003."
+      ],
+      "model_outputs": {
+        "GPT": "Tesla was founded by Martin Eberhard and Marc Tarpenning in 2003.",
+        "Gemini": "Tesla was founded by Elon Musk in 2003.",
+        "RAG Pipeline": "Tesla was founded in 2003 by Martin Eberhard and Marc Tarpenning."
+      }
+    }
+  ]
+}
 ```
 
 ## Setup

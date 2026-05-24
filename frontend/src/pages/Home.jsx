@@ -12,7 +12,7 @@ import RiskScoreCard from '../components/RiskScoreCard';
 import TechnicalDetails from '../components/TechnicalDetails';
 import UncertaintyBreakdown from '../components/UncertaintyBreakdown';
 import VerdictCard from '../components/VerdictCard';
-import { analyzeResponse, checkBackendHealth, clearHistory, getHistory, runBenchmark } from '../api/hallucinationApi';
+import { analyzeResponse, checkBackendHealth, clearHistory, getHistory, runBenchmark, runDemoModelComparison } from '../api/hallucinationApi';
 import demoCasesData from '../../../data/demo_cases.json';
 
 export default function Home() {
@@ -85,6 +85,7 @@ export default function Home() {
           />
         )}
         {activePage === 'evaluation' && <EvaluationLab />}
+        {activePage === 'modelLab' && <ModelLabPage />}
         {activePage === 'history' && <HistoryPage />}
         {activePage === 'methodology' && <MethodologyPage />}
       </main>
@@ -176,6 +177,171 @@ function EvaluationLab() {
         </div>
       )}
     </section>
+  );
+}
+
+function ModelLabPage() {
+  const [comparison, setComparison] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleRun = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setComparison(await runDemoModelComparison());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportComparison = () => {
+    if (!comparison) return;
+    const blob = new Blob([JSON.stringify(comparison, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `halluciguard-model-comparison-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <section className="flex flex-col gap-6">
+      <PageHeader
+        title="Model Testing Platform"
+        subtitle="Compare GPT, Gemini, LLaMA, and RAG-style outputs across shared questions, domains, and hallucination risk."
+      />
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-premium">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Demo Multi-Model Batch</h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              Runs the same five prompts against fixed model outputs and scores each answer through the HalluciGuard pipeline.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleRun} disabled={loading} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60">
+              {loading ? 'Scoring Models...' : 'Run Model Comparison'}
+            </button>
+            <button onClick={exportComparison} disabled={!comparison} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+              Export Report
+            </button>
+          </div>
+        </div>
+      </div>
+      {error && <Alert tone="rose" title="Model Lab Error" message={error} />}
+      {comparison && (
+        <>
+          <Leaderboard comparison={comparison} />
+          <DomainReliability domains={comparison.domain_reliability} />
+          <ModelCaseMatrix caseResults={comparison.case_results} />
+        </>
+      )}
+    </section>
+  );
+}
+
+function Leaderboard({ comparison }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-premium">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-bold text-slate-900">Leaderboard</h3>
+          <p className="mt-1 text-xs text-slate-500">
+            {comparison.models_compared} models compared across {comparison.total_cases} shared cases.
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {comparison.leaderboard.map((model, index) => (
+          <div key={model.model_name} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-slate-900">#{index + 1} {model.model_name}</span>
+              <span className="rounded-md bg-white px-2 py-1 text-[10px] font-bold text-slate-600">
+                {model.reliability_score}% reliable
+              </span>
+            </div>
+            <div className="mt-4">
+              <div className="flex justify-between text-xs font-semibold text-slate-700">
+                <span>Average hallucination risk</span>
+                <span>{model.average_risk}%</span>
+              </div>
+              <div className="mt-1 h-2 rounded-full bg-white">
+                <div className={`h-2 rounded-full ${model.average_risk >= 66 ? 'bg-rose-500' : model.average_risk >= 31 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${model.average_risk}%` }} />
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[10px] font-semibold">
+              <div className="rounded bg-emerald-50 p-2 text-emerald-700">Low {model.low_risk_cases}</div>
+              <div className="rounded bg-amber-50 p-2 text-amber-700">Med {model.medium_risk_cases}</div>
+              <div className="rounded bg-rose-50 p-2 text-rose-700">High {model.high_risk_cases}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DomainReliability({ domains }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-premium">
+      <h3 className="text-sm font-bold text-slate-900">Domain-Wise Reliability</h3>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-slate-200 text-xs">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="px-3 py-2 text-left font-semibold text-slate-500">Domain</th>
+              <th className="px-3 py-2 text-left font-semibold text-slate-500">Model</th>
+              <th className="px-3 py-2 text-left font-semibold text-slate-500">Average Risk</th>
+              <th className="px-3 py-2 text-left font-semibold text-slate-500">Reliability</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {Object.entries(domains).flatMap(([domain, models]) =>
+              Object.entries(models).map(([modelName, scores]) => (
+                <tr key={`${domain}-${modelName}`}>
+                  <td className="px-3 py-2 font-semibold capitalize text-slate-800">{domain}</td>
+                  <td className="px-3 py-2 text-slate-600">{modelName}</td>
+                  <td className="px-3 py-2 text-slate-600">{scores.average_risk}%</td>
+                  <td className="px-3 py-2 text-slate-600">{scores.reliability_score}%</td>
+                </tr>
+              )),
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function ModelCaseMatrix({ caseResults }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-premium">
+      <h3 className="text-sm font-bold text-slate-900">Case-Level Model Risk</h3>
+      <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
+        {Object.entries(caseResults).map(([modelName, runs]) => (
+          <div key={modelName} className="rounded-lg border border-slate-100">
+            <div className="border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-900">{modelName}</div>
+            <div className="divide-y divide-slate-100">
+              {runs.map((run) => (
+                <div key={`${modelName}-${run.case_id}`} className="px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold text-slate-800">{run.case_id}</span>
+                    <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${run.risk_score >= 66 ? 'bg-rose-50 text-rose-700' : run.risk_score >= 31 ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                      {run.risk_score}% {run.risk_level}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-slate-500">{run.question}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

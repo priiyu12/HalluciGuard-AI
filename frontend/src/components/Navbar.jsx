@@ -1,6 +1,7 @@
 const navItems = [
   { id: 'analyze', label: 'Analyze' },
   { id: 'evaluation', label: 'Evaluation Lab' },
+  { id: 'modelLab', label: 'Model Lab' },
   { id: 'history', label: 'History' },
   { id: 'methodology', label: 'Methodology' },
 ];

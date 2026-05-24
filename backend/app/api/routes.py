@@ -1,7 +1,16 @@
 from fastapi import APIRouter, HTTPException
-from app.schemas import AnalysisRequest, AnalysisResponse, BenchmarkResponse, HealthResponse, HistoryResponse
+from app.schemas import (
+    AnalysisRequest,
+    AnalysisResponse,
+    BenchmarkResponse,
+    HealthResponse,
+    HistoryResponse,
+    ModelComparisonRequest,
+    ModelComparisonResponse,
+)
 from app.benchmark.evaluator import run_benchmark
 from app.core.report_generator import generate_report
+from app.model_lab.comparison import compare_models
 from app.models.embedding_model import get_model_mode
 from app.storage.history_store import add_history_item, clear_history, get_history_items
 
@@ -67,4 +76,29 @@ async def benchmark_run():
         raise HTTPException(
             status_code=500,
             detail=f"Benchmark failure: {str(e)}"
+        )
+
+@router.post("/models/compare", response_model=ModelComparisonResponse)
+async def compare_model_outputs(request: ModelComparisonRequest):
+    try:
+        cases = [case.model_dump() for case in request.cases] if request.cases else None
+        return ModelComparisonResponse(**compare_models(cases))
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Model comparison failure: {str(e)}"
+        )
+
+@router.get("/models/compare/demo", response_model=ModelComparisonResponse)
+async def compare_demo_models():
+    try:
+        return ModelComparisonResponse(**compare_models())
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Demo model comparison failure: {str(e)}"
         )
